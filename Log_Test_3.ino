@@ -6,9 +6,16 @@
 #include <SD.h>
 #include <ArduinoJson.h>
 
+
+uint32_t lastFreeHeap = 0;
+
 // WiFi Credentials
 const char* ssid = "LEOLEOLEO";
 const char* password = "11111111";
+
+unsigned long previousWiFiCheckMillis = 0;
+const long wifiCheckInterval = 10000; // เช็คทุก 10 วินาที
+
 
 // SD Card Chip Select pin
 const int chipSelect = 4;
@@ -23,6 +30,45 @@ File logFile;
 String currentLogFileName = "";
 unsigned long previousMillis = 0;
 const long interval = 1000; // Log data every 5 seconds
+
+
+void feedWatchdog() {
+  ESP.wdtFeed();
+  Serial.println("Watchdog fed ✅");
+}
+
+void debugMemory() {
+  uint32_t currentHeap = ESP.getFreeHeap();
+  Serial.println("=== Memory Debug Info ===");
+  Serial.print("Free Heap: ");
+  Serial.println(currentHeap);
+
+  Serial.print("Max Allocatable Block: ");
+  Serial.println(ESP.getMaxFreeBlockSize());
+
+  Serial.print("Heap Fragmentation (%): ");
+  Serial.println(ESP.getHeapFragmentation());
+
+  // เช็คว่าหน่วยความจำลดลงเรื่อย ๆ (memory leak)
+  if (lastFreeHeap != 0 && currentHeap < lastFreeHeap - 2000) { // ถ้าลดลงเกิน 2000 bytes
+    Serial.println("⚠️ Possible Memory Leak Detected!");
+  }
+  lastFreeHeap = currentHeap;
+
+  Serial.println("=========================");
+}
+
+void checkMemory() {
+  uint32_t freeHeap = ESP.getFreeHeap();
+  Serial.print("Free Heap Memory: ");
+  Serial.println(freeHeap);
+
+  if (freeHeap < 5000) { // ถ้าน้อยกว่า 5KB
+    Serial.println("WARNING: Memory critically low! Restarting...");
+    delay(100); // flush serial
+    ESP.restart();  // รีเซ็ต MCU
+  }
+}
 
 // ฟังก์ชันสำหรับบันทึกสถานะลงในไฟล์
 void saveState() {
@@ -54,7 +100,7 @@ void loadState() {
       if (error) {
         Serial.println("Failed to read state file, using default state.");
       } else {
-        currentState = doc["currentState"].as<LoggingState>();
+        currentState = static_cast<LoggingState>(doc["currentState"].as<int>());
         currentLogFileName = doc["fileName"].as<String>();
         
         Serial.println("State loaded:");
@@ -76,6 +122,16 @@ void loadState() {
     Serial.println("No state file found. Starting with default state.");
   }
 }
+
+void checkWiFi() {
+  if (WiFi.status() != WL_CONNECTED) {
+    Serial.println("WiFi disconnected. Attempting reconnection in background...");
+    WiFi.disconnect();
+    WiFi.begin(ssid, password);
+  }
+}
+
+
 
 void setup() {
   Serial.begin(115200);
@@ -205,7 +261,7 @@ void setup() {
          if (currentState == LOGGING) {
           currentState = PAUSED;
           statusMessage = "Recording paused";
-                  stateChanged = true; // สถานะเปลี่ยน
+          stateChanged = true; // สถานะเปลี่ยน
         } else {
           statusMessage = "Not currently recording";
         }
@@ -276,9 +332,23 @@ void setup() {
   });
 
   server.begin();
+  Serial.print("Initial Free Heap Memory: ");
+  Serial.println(ESP.getFreeHeap());
+  lastFreeHeap = ESP.getFreeHeap();
+
+
 }
 
 void loop() {
+    yield();  // ป้อน watchdog ป้องกันค้าง (จำเป็นบน ESP8266)
+  unsigned long currentMillis = millis();
+
+  // เช็ค WiFi ทุก wifiCheckInterval
+  if (currentMillis - previousWiFiCheckMillis >= wifiCheckInterval) {
+    previousWiFiCheckMillis = currentMillis;
+    checkWiFi();
+  }
+  
   if (currentState == LOGGING) {
     unsigned long currentMillis = millis();
     if (currentMillis - previousMillis >= interval) {
@@ -295,6 +365,9 @@ void loop() {
         logFile.flush(); // Ensure data is written to SD card
         Serial.println("Logged: " + dataString);
       }
+      feedWatchdog();   // ป้อน watchdog manual
+      checkMemory();    // เช็คว่าหน่วยความจำพอไหม
+      debugMemory();    // debug memory + เช็ค memory leak
     }
   }
 }

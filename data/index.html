@@ -9,6 +9,23 @@
 <body>
     <div class="container">
         <h1>Data Logging Control</h1>
+
+        <!-- ส่วนแสดงผลข้อมูลแบบ Real-time -->
+        <div class="data-display">
+            <div class="data-card">
+                <h4>Flowrate</h4>
+                <p><span id="data-flow">--</span> L/min</p>
+            </div>
+            <div class="data-card">
+                <h4>Temperature</h4>
+                <p><span id="data-temp">--</span> °C</p>
+            </div>
+            <div class="data-card">
+                <h4>Timestamp</h4>
+                <p><span id="data-time">--</span></p>
+            </div>
+        </div>
+
         <div class="status-box">
             <p>Status: <span id="status">Idle</span></p>
         </div>

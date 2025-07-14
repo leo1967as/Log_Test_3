@@ -63,3 +63,97 @@ a {
 a:hover {
     text-decoration: underline;
 }
+
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f0f2f5;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+}
+.container {
+    background-color: white;
+    padding: 2rem;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    text-align: center;
+    width: 100%;
+    max-width: 600px;
+}
+h1 {
+    color: #333;
+}
+
+/* ส่วนแสดงผลข้อมูล (ใหม่) */
+.data-display {
+    display: flex;
+    justify-content: space-around;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+.data-card {
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    padding: 1rem;
+    flex-grow: 1;
+}
+.data-card h4 {
+    margin: 0 0 0.5rem 0;
+    color: #495057;
+}
+.data-card p {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #007bff;
+}
+
+.status-box {
+    margin: 1.5rem 0;
+    padding: 1rem;
+    background-color: #e9ecef;
+    border-radius: 5px;
+}
+#status {
+    font-weight: bold;
+    color: #007bff;
+}
+.buttons button {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    padding: 1rem 1.5rem;
+    margin: 0.5rem;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: background-color 0.3s;
+}
+.buttons button:hover {
+    background-color: #0056b3;
+}
+.buttons #stopBtn {
+    background-color: #dc3545;
+}
+.buttons #stopBtn:hover {
+    background-color: #c82333;
+}
+.buttons #pauseBtn {
+    background-color: #ffc107;
+}
+.buttons #pauseBtn:hover {
+    background-color: #e0a800;
+}
+.link-container {
+    margin-top: 2rem;
+}
+a {
+    color: #007bff;
+    text-decoration: none;
+}
+a:hover {
+    text-decoration: underline;
+}

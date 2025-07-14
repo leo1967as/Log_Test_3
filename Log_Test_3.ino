@@ -24,6 +24,59 @@ String currentLogFileName = "";
 unsigned long previousMillis = 0;
 const long interval = 1000; // Log data every 5 seconds
 
+// ฟังก์ชันสำหรับบันทึกสถานะลงในไฟล์
+void saveState() {
+  // สร้าง JSON object
+  JsonDocument doc;
+  doc["currentState"] = currentState;
+  doc["fileName"] = currentLogFileName;
+
+  // เปิดไฟล์ status.json เพื่อเขียนทับ
+  File stateFile = LittleFS.open("/status.json", "w");
+  if (!stateFile) {
+    Serial.println("Failed to open state file for writing");
+    return;
+  }
+  
+  // เขียนข้อมูล JSON ลงไฟล์
+  serializeJson(doc, stateFile);
+  stateFile.close();
+  Serial.println("State saved.");
+}
+
+// ฟังก์ชันสำหรับโหลดสถานะจากไฟล์
+void loadState() {
+  if (LittleFS.exists("/status.json")) {
+    File stateFile = LittleFS.open("/status.json", "r");
+    if (stateFile) {
+      JsonDocument doc;
+      DeserializationError error = deserializeJson(doc, stateFile);
+      if (error) {
+        Serial.println("Failed to read state file, using default state.");
+      } else {
+        currentState = doc["currentState"].as<LoggingState>();
+        currentLogFileName = doc["fileName"].as<String>();
+        
+        Serial.println("State loaded:");
+        Serial.print("  - Current State: "); Serial.println(currentState);
+        Serial.print("  - Log File Name: "); Serial.println(currentLogFileName);
+
+        // ถ้าสถานะล่าสุดคือ LOGGING หรือ PAUSED ให้เปิดไฟล์ log เดิมขึ้นมาเพื่อเขียนต่อ
+        if (currentState == LOGGING || currentState == PAUSED) {
+          logFile = SD.open(currentLogFileName, "a");
+          if (!logFile) {
+            Serial.println("Failed to re-open log file. Resetting state.");
+            currentState = IDLE;
+          }
+        }
+      }
+      stateFile.close();
+    }
+  } else {
+    Serial.println("No state file found. Starting with default state.");
+  }
+}
+
 void setup() {
   Serial.begin(115200);
 
@@ -40,6 +93,10 @@ void setup() {
     return;
   }
   Serial.println("SD Card initialized.");
+
+  // --- โหลดสถานะล่าสุด ---
+  loadState(); 
+
 
   // --- WiFi Connection ---
   WiFi.begin(ssid, password);
@@ -109,7 +166,8 @@ void setup() {
     if (request->hasParam("action", true)) {
       String action = request->getParam("action", true)->value();
       String statusMessage = "Unknown state";
-      
+      bool stateChanged = false; // ตัวแปรเช็คว่าสถานะเปลี่ยนหรือไม่
+
       if (action == "start") {
         if (currentState == IDLE) {
           int fileNum = 0;
@@ -123,12 +181,14 @@ void setup() {
             logFile.println("Timestamp,Flowrate,Temperature");
             currentState = LOGGING;
             statusMessage = "Recording started";
+                      stateChanged = true; // สถานะเปลี่ยน
           } else {
             statusMessage = "Failed to create file on SD";
           }
         } else if (currentState == PAUSED) {
           currentState = LOGGING;
           statusMessage = "Recording resumed";
+                    stateChanged = true; // สถานะเปลี่ยน
         } else {
           statusMessage = "Already recording";
         }
@@ -137,6 +197,7 @@ void setup() {
           if(logFile) logFile.close();
           currentState = IDLE;
           statusMessage = "Recording stopped. File saved.";
+                  stateChanged = true; // สถานะเปลี่ยน
         } else {
           statusMessage = "Already stopped";
         }
@@ -144,6 +205,7 @@ void setup() {
          if (currentState == LOGGING) {
           currentState = PAUSED;
           statusMessage = "Recording paused";
+                  stateChanged = true; // สถานะเปลี่ยน
         } else {
           statusMessage = "Not currently recording";
         }
@@ -154,7 +216,11 @@ void setup() {
       String currentStatusStr = "Idle";
       if(currentState == LOGGING) currentStatusStr = "Recording";
       if(currentState == PAUSED) currentStatusStr = "Paused";
-      
+
+            // ถ้าสถานะมีการเปลี่ยนแปลง ให้บันทึก
+      if (stateChanged) {
+        saveState();
+      }
       request->send(200, "application/json", "{\"status\":\"" + currentStatusStr + "\", \"message\":\"" + statusMessage + "\"}");
     } else {
       request->send(400, "text/plain", "Bad Request");

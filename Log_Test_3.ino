@@ -350,7 +350,6 @@ void loop() {
   }
   
   if (currentState == LOGGING) {
-    unsigned long currentMillis = millis();
     if (currentMillis - previousMillis >= interval) {
       previousMillis = currentMillis;
 

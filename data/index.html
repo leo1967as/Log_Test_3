@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ESP8266 Data Logger</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Data Logging Control</h1>
+        <div class="status-box">
+            <p>Status: <span id="status">Idle</span></p>
+        </div>
+        <div class="buttons">
+            <button id="startBtn">Start Record</button>
+            <button id="pauseBtn">Pause Record</button>
+            <button id="stopBtn">Stop Record</button>
+        </div>
+        <div class="link-container">
+            <a href="/files">Go to File Manager</a>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>

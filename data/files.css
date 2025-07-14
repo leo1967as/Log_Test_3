@@ -1,0 +1,63 @@
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f0f2f5;
+    margin: 0;
+    padding: 2rem;
+}
+.container {
+    background-color: white;
+    max-width: 800px;
+    margin: auto;
+    padding: 2rem;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+h1 {
+    color: #333;
+    border-bottom: 2px solid #eee;
+    padding-bottom: 0.5rem;
+}
+#fileList {
+    list-style-type: none;
+    padding: 0;
+}
+#fileList li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    border-bottom: 1px solid #ddd;
+}
+#fileList li:last-child {
+    border-bottom: none;
+}
+.fileName {
+    font-weight: bold;
+}
+.file-actions a, .file-actions button {
+    text-decoration: none;
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 5px;
+    margin-left: 0.5rem;
+    cursor: pointer;
+    border: none;
+    font-size: 0.9rem;
+}
+.download-btn {
+    background-color: #28a745;
+}
+.delete-btn {
+    background-color: #dc3545;
+}
+.link-container {
+    margin-top: 2rem;
+    text-align: center;
+}
+a {
+    color: #007bff;
+    text-decoration: none;
+}
+a:hover {
+    text-decoration: underline;
+}

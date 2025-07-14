@@ -4,13 +4,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const stopBtn = document.getElementById('stopBtn');
     const pauseBtn = document.getElementById('pauseBtn');
     const statusEl = document.getElementById('status');
+    const fileNameEl = document.getElementById('fileName');
 
-    // ส่วนแสดงผลข้อมูล (ใหม่)
+    // ส่วนแสดงผลข้อมูล
     const dataFlowEl = document.getElementById('data-flow');
-    const dataTempEl = document.getElementById('data-temp');
-    const dataTimeEl = document.getElementById('data-time');
+    const dataWeightEl = document.getElementById('data-weight');
 
-    // ฟังก์ชันส่งคำสั่งควบคุม (Start/Stop/Pause)
+    // ฟังก์ชันส่งคำสั่งควบคุม (Start/Stop/Pause/Status)
     function sendCommand(command) {
         fetch('/control', {
             method: 'POST',
@@ -20,23 +20,37 @@ document.addEventListener('DOMContentLoaded', () => {
         .then(response => response.json())
         .then(data => {
             statusEl.textContent = data.status;
+            // แสดงชื่อไฟล์เมื่อมีการบันทึก หรือเมื่อสถานะเป็น Paused
+            if (data.status === 'Recording' || data.status === 'Paused') {
+                fileNameEl.textContent = data.fileName;
+            } else {
+                fileNameEl.textContent = 'N/A';
+            }
             console.log(data.message);
         })
-        .catch(error => console.error('Error:', error));
+        .catch(error => console.error('Error sending command:', error));
     }
 
-    // ฟังก์ชันดึงข้อมูลล่าสุดจาก ESP8266 (ใหม่)
+    // ฟังก์ชันดึงข้อมูลล่าสุดจาก ESP8266
     function fetchData() {
         fetch('/data')
-            .then(response => response.json())
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
             .then(data => {
                 // อัปเดตส่วนแสดงผลข้อมูล
                 dataFlowEl.textContent = data.flowrate.toFixed(2);
-                dataTempEl.textContent = data.temp.toFixed(2);
-                // แปลง timestamp (millis) เป็นเวลาที่อ่านง่าย
-                dataTimeEl.textContent = new Date(data.timestamp).toLocaleTimeString();
+                dataWeightEl.textContent = data.weight.toFixed(2);
             })
-            .catch(error => console.error('Error fetching data:', error));
+            .catch(error => {
+                console.error('Error fetching data:', error);
+                // แสดงสถานะว่ามีปัญหาในการเชื่อมต่อ
+                dataFlowEl.textContent = 'Err';
+                dataWeightEl.textContent = 'Err';
+            });
     }
 
     // --- Event Listeners ---
@@ -45,6 +59,12 @@ document.addEventListener('DOMContentLoaded', () => {
     pauseBtn.addEventListener('click', () => sendCommand('pause'));
 
     // --- เริ่มการทำงาน ---
-    sendCommand('status'); // ดึงสถานะเริ่มต้นเมื่อโหลดหน้า
-    setInterval(fetchData, 2000); // ดึงข้อมูลใหม่ๆ ทุกๆ 2 วินาที
+    // 1. ดึงสถานะปัจจุบันเมื่อโหลดหน้าเว็บ
+    sendCommand('status'); 
+    
+    // 2. เริ่มดึงข้อมูล Real-time ทุกๆ 2 วินาที
+    setInterval(fetchData, 2000); 
+    
+    // 3. ดึงสถานะปัจจุบันทุกๆ 5 วินาที เพื่อให้ข้อมูลตรงกันเสมอ
+    setInterval(() => sendCommand('status'), 5000);
 });

@@ -61,3 +61,35 @@ a {
 a:hover {
     text-decoration: underline;
 }
+
+/* ... (สไตล์เดิมของคุณ) ... */
+
+/* NEW: Styles for the action bar and refresh button */
+.action-bar {
+    margin-bottom: 1.5rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid #eee;
+    text-align: left;
+}
+
+#refreshBtn {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    padding: 0.6rem 1.2rem;
+    font-size: 1rem;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s, transform 0.1s;
+}
+
+#refreshBtn:hover {
+    background-color: #0056b3;
+    transform: translateY(-1px);
+}
+
+#refreshBtn:disabled {
+    background-color: #6c757d; /* Gray color when disabled */
+    cursor: not-allowed;
+    transform: none;
+}
